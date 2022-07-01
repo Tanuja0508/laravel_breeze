@@ -1,39 +1,55 @@
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Laravel 8 Phone Number OTP Auth Example</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
-    <div class="container mt-5" style="max-width: 550px">
-        <div class="alert alert-danger" id="error" style="display: none;"></div>
-        <h3>Add Phone Number</h3>
-        <div class="alert alert-success" id="successAuth" style="display: none;"></div>
-        <form>
-            <label>Phone Number:</label>
-            <input type="text" id="number" class="form-control" placeholder="+91 ********">
-            <div id="recaptcha-container"></div>
-            <button type="button" class="btn btn-primary mt-3" onclick="sendOTP();">Send OTP</button>
-        </form>
 
-        <div class="mb-5 mt-5">
-            <h3>Add verification code</h3>
-            <div class="alert alert-success" id="successOtpAuth" style="display: none;"></div>
-            <form>
-                <input type="text" id="verification" class="form-control" placeholder="Verification code">
-                <button type="button" class="btn btn-danger mt-3" onclick="verify()">Verify code</button>
-            </form>
+
+
+
+
+<section class="validOTPForm">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 mx-auto">
+                <div class="card">
+                    <div class="card-header bg-dark text-white">
+                        <h4 class="text-center">
+                            Account verification
+                        </h4>
+                    </div>
+
+
+                    <div class="card-body">
+                        <form>
+                            @csrf
+                            <div class="form-group">
+                                <label for="phone_no">Phone Number</label>
+
+                                <input type="text" class="form-control" name="phone_no" id="number" placeholder="(Code) *******">
+                            </div>
+                            <div id="recaptcha-container"></div>
+                                <a href="#" id="getcode" class="btn btn-dark btn-sm">Get Code</a>
+
+                                <div class="form-group mt-4">
+                                    <input type="text" name="" id="codeToVerify" name="getcode" class="form-control" placeholder="Enter Code">
+                                </div>
+
+                                <a href="#" class="btn btn-dark btn-sm btn-block" id="verifPhNum">Verify Phone No</a>
+                        
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
-    <script src="https://www.gstatic.com/firebasejs/6.0.2/firebase.js"></script>
+</section>
 
-    <script>
-        const firebaseConfig = {
-  apiKey: "AIzaSyB4jtkYgM8bqllAlTJqpwURkyAgT8ddYGc",
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.0.1/firebase.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+
+const firebaseConfig = {
+    apiKey: "AIzaSyB4jtkYgM8bqllAlTJqpwURkyAgT8ddYGc",
   authDomain: "chat-app-4ca73.firebaseapp.com",
   databaseURL: "https://chat-app-4ca73-default-rtdb.firebaseio.com",
   projectId: "chat-app-4ca73",
@@ -41,49 +57,92 @@
   messagingSenderId: "1007604660125",
   appId: "1:1007604660125:web:3f1301fffa4c8cc4dee174",
   measurementId: "G-NBKLX3YWWP"
-};
-        firebase.initializeApp(firebaseConfig);
+  };
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+
+window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+    'size': 'invisible',
+    'callback': function (response) {
+        // reCAPTCHA solved, allow signInWithPhoneNumber.
+        console.log('recaptcha resolved');
+    }
+});
+onSignInSubmit();
+});
+
+
+
+function onSignInSubmit() {
+$('#verifPhNum').on('click', function() {
+    let phoneNo = '';
+    var code = $('#codeToVerify').val();
+    console.log(code);
+    $(this).attr('disabled', 'disabled');
+    $(this).text('Processing..');
+    confirmationResult.confirm(code).then(function (result) {
+                alert('Succecss');
+        var user = result.user;
+        console.log(user);
+
+
+        // ...
+    }.bind($(this))).catch(function (error) {
+    
+        // User couldn't sign in (bad verification code?)
+        // ...
+        $(this).removeAttr('disabled');
+        $(this).text('Invalid Code');
+        setTimeout(() => {
+            $(this).text('Verify Phone No');
+        }, 2000);
+    }.bind($(this)));
+
+});
+
+
+$('#getcode').on('click', function () {
+    alert('hjdhjhdj');
+    var phoneNo = $('#number').val();
+    console.log(phoneNo);
+    // getCode(phoneNo);
+    var appVerifier = window.recaptchaVerifier;
+    firebase.auth().signInWithPhoneNumber(phoneNo, appVerifier)
+    .then(function (confirmationResult) {
+
+        window.confirmationResult=confirmationResult;
+        coderesult=confirmationResult;
+        console.log(coderesult);
+    }).catch(function (error) {
+        console.log(error.message);
+
+    });
+});
+}
+
+
+
+// function getCode(phoneNumber) {
+//     var appVerifier = window.recaptchaVerifier;
+//     firebase.auth().signInWithPhoneNumber(phoneNumber, appVerifier)
+//         .then(function (confirmationResult) {
+//             console.log(confirmationResult);
+//             // SMS sent. Prompt user to type the code from the message, then sign the
+//             // user in with confirmationResult.confirm(code).
+//             window.confirmationResult = confirmationResult;
+//             $('#getcode').removeAttr('disabled');
+//             $('#getcode').text('RESEND');
+//         }).catch(function (error) {
+        
+//             console.log(error);
+//             console.log(error.code);
+//             // Error; SMS not sent
+//             // ...
+//         });
+//   }  
     </script>
-    <script type="text/javascript">
-        window.onload = function () {
-            render();
-        };
-        function render() {
-            window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container');
-            recaptchaVerifier.render();
-        }
-        function sendOTP() {
-            var number = $("#number").val();
-            firebase.auth().signInWithPhoneNumber(number, window.recaptchaVerifier).then(function (confirmationResult) {
-                window.confirmationResult = confirmationResult;
-                coderesult = confirmationResult;
-                console.log(coderesult);
-                $("#successAuth").text("Message sent");
-                $("#successAuth").show();
-            }).catch(function (error) {
-                $("#error").text(error.message);
-                $("#error").show();
-            });
-        }
-        function verify() {
-            alert('verify');
-            var code = $("#verification").val();
-            coderesult.confirm(code).then(function (result) {
-                var user = result.user;
-                console.log(user);
-                $("#successOtpAuth").text("Auth is successful");
-                $("#successOtpAuth").show();
-            }).catch(function (error) {
-                $("#error").text(error.message);
-                $("#error").show();
-            });
-        }
-    </script>
-</body>
-</html>
 
 
 
 
-
- 
